@@ -4,8 +4,10 @@ import {
   ExtensionContext,
   window,
   WorkspaceFolder,
-  FileSystemWatcher,
   RelativePattern,
+  commands,
+  CompletionList,
+  Uri,
 } from 'vscode';
 import {
   LanguageClient,
@@ -62,6 +64,16 @@ async function addWorkspaceFolder(
     },
   };
 
+  const virtualDocumentContents = new Map<string, string>();
+
+  workspace.registerTextDocumentContentProvider('embedded-content', {
+    provideTextDocumentContent: (uri) => {
+      const originalUri = uri.path.slice(1, -4);
+      const decodedUri = decodeURIComponent(originalUri);
+      return virtualDocumentContents.get(decodedUri);
+    },
+  });
+
   const clientOptions: LanguageClientOptions = {
     workspaceFolder,
     outputChannel,
@@ -73,6 +85,39 @@ async function addWorkspaceFolder(
       },
     ],
     synchronize: { fileEvents },
+    middleware: {
+      provideCompletionItem: async (
+        document,
+        position,
+        context,
+        token,
+        next
+      ) => {
+        const originalUri = document.uri.toString(true);
+        const isInsideHtmlRegion = await commands.executeCommand(
+          'twig-language-server.is-inside-html-region',
+          originalUri,
+          position
+        );
+
+        if (!isInsideHtmlRegion) {
+          return await next(document, position, context, token);
+        }
+
+        virtualDocumentContents.set(originalUri, document.getText());
+
+        const vdocUriString = `embedded-content://html/${encodeURIComponent(
+          originalUri
+        )}.html`;
+        const vdocUri = Uri.parse(vdocUriString);
+        return await commands.executeCommand<CompletionList>(
+          'vscode.executeCompletionItemProvider',
+          vdocUri,
+          position,
+          context.triggerCharacter
+        );
+      },
+    },
   };
 
   const client = new LanguageClient(

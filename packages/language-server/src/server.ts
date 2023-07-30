@@ -13,6 +13,7 @@ import { CompletionProvider } from './completions/completion-provider';
 import { SignatureHelpProvider } from './signature-helps/signature-help-provider';
 import { semanticTokensLegend } from './semantic-tokens/tokens-provider';
 import { SemanticTokensProvider } from './semantic-tokens/semantic-tokens-provider';
+import { ExecuteCommandProvider } from './commands/execute-command-provider';
 
 export class Server {
   connection: Connection;
@@ -28,6 +29,7 @@ export class Server {
     new CompletionProvider(this);
     new SignatureHelpProvider(this);
     new SemanticTokensProvider(this);
+    new ExecuteCommandProvider(this);
 
     // Bindings
     connection.onInitialize((initializeParams: InitializeParams) => {
@@ -46,6 +48,9 @@ export class Server {
         semanticTokensProvider: {
           legend: semanticTokensLegend,
           full: true,
+        },
+        executeCommandProvider: {
+          commands: ['twig-language-server.is-inside-html-region'],
         },
       };
 
