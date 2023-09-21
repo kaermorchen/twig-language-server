@@ -7,9 +7,11 @@ import { localVariables } from './local-variables';
 import { functions } from './functions';
 import { filters } from './filters';
 import { forLoop } from './for-loop';
+import { TwigDebugInfo, getSectionsFromPhpDebugTwig } from './debug-twig';
 
 export class CompletionProvider {
   server: Server;
+  twigInfo?: TwigDebugInfo;
 
   constructor(server: Server) {
     this.server = server;
@@ -18,6 +20,10 @@ export class CompletionProvider {
     this.server.connection.onCompletionResolve(
       this.onCompletionResolve.bind(this)
     );
+  }
+
+  async initializeGlobalsFromCommand(phpBinConsoleCommand: string) {
+    this.twigInfo = await getSectionsFromPhpDebugTwig(phpBinConsoleCommand + ' debug:twig');
   }
 
   async onCompletion(params: CompletionParams) {
@@ -37,9 +43,9 @@ export class CompletionProvider {
     }
 
     [
-      globalVariables(cursorNode),
-      functions(cursorNode),
-      filters(cursorNode),
+      globalVariables(cursorNode, this.twigInfo?.Globals || []),
+      functions(cursorNode, this.twigInfo?.Functions || []),
+      filters(cursorNode, this.twigInfo?.Filters || []),
       localVariables(cursorNode),
       forLoop(cursorNode),
       templatePaths(
