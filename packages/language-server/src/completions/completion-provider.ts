@@ -22,8 +22,20 @@ export class CompletionProvider {
     );
   }
 
-  async initializeGlobalsFromCommand(phpBinConsoleCommand: string) {
-    this.twigInfo = await getSectionsFromPhpDebugTwig(phpBinConsoleCommand + ' debug:twig');
+  async initializeGlobalsFromCommand(phpBinConsoleCommand: string | undefined) {
+    this.twigInfo = phpBinConsoleCommand
+      ? await getSectionsFromPhpDebugTwig(phpBinConsoleCommand + ' debug:twig')
+      : undefined;
+
+    if (this.twigInfo) {
+      console.info(
+        'Twig info initialized. '
+        + `Detected ${this.twigInfo.Functions.length} functions, `
+        + `${this.twigInfo.Filters.length} filters and ${this.twigInfo.Globals.length} globals.`
+      );
+    } else {
+      console.error('Twig info not initialized.');
+    }
   }
 
   async onCompletion(params: CompletionParams) {

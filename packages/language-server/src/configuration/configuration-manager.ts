@@ -17,8 +17,6 @@ export class ConfigurationManager {
     const config: LanguageServerSettings | undefined = settings?.[this.configurationSection];
 
     const phpBinConsoleCommand = config?.completion?.phpBinConsoleCommand?.trim();
-    if (phpBinConsoleCommand) {
-      this.server.completionProvider.initializeGlobalsFromCommand(phpBinConsoleCommand);
-    }
+    await this.server.completionProvider.initializeGlobalsFromCommand(phpBinConsoleCommand);
   }
 }
