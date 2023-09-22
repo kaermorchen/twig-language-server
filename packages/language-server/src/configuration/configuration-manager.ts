@@ -15,5 +15,7 @@ export class ConfigurationManager {
 
   async onDidChangeConfiguration({ settings }: DidChangeConfigurationParams) {
     const config: LanguageServerSettings | undefined = settings?.[this.configurationSection];
+
+    this.server.definitionProvider.setTemplatesDirectory(config?.definition?.templatesDirectory?.trim());
   }
 }

@@ -37,7 +37,13 @@
   "contributes": {
     "configuration": {
       "title": "Modern Twig",
-      "properties": {}
+      "properties": {
+        "modernTwig.definition.templatesDirectory": {
+          "type": "string",
+          "default": "templates",
+          "markdownDescription": "Root directory for all .twig templates for definition features support."
+        }
+      }
     },
     "languages": [
       {

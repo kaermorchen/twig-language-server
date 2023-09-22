@@ -23,6 +23,8 @@ export class Server {
   documentCache!: DocumentCache;
   workspaceFolder!: WorkspaceFolder;
 
+  definitionProvider: DefinitionProvider;
+
   clientCapabilities!: ClientCapabilities;
 
   constructor(connection: Connection) {
@@ -33,7 +35,7 @@ export class Server {
     new CompletionProvider(this);
     new SignatureHelpProvider(this);
     new SemanticTokensProvider(this);
-    new DefinitionProvider(this);
+    this.definitionProvider = new DefinitionProvider(this);
 
     // Bindings
     connection.onInitialize((initializeParams: InitializeParams) => {

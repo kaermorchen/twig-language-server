@@ -33,12 +33,19 @@ const isPathInsideTemplateEmbedding = (stringNode: SyntaxNode): boolean => {
 };
 
 export class DefinitionProvider {
+  private readonly defaultTemplatesDirectory = 'templates';
+  private templatesDirectory = this.defaultTemplatesDirectory;
+
   server: Server;
 
   constructor(server: Server) {
     this.server = server;
 
     this.server.connection.onDefinition(this.onDefinition.bind(this));
+  }
+
+  setTemplatesDirectory(templatesDirectory: string | undefined) {
+    this.templatesDirectory = templatesDirectory || this.defaultTemplatesDirectory;
   }
 
   async onDefinition(params: DefinitionParams): Promise<Definition | undefined> {
@@ -56,10 +63,8 @@ export class DefinitionProvider {
       return;
     }
 
-    const templatesDirName = 'templates';
     const filePath = cursorNode.text.slice('"'.length, -'"'.length);
-
-    const fullFilePath = `${this.server.workspaceFolder.uri}/${templatesDirName}/${filePath}`;
+    const fullFilePath = `${this.server.workspaceFolder.uri}/${this.templatesDirectory}/${filePath}`;
 
     const file = this.server.documentCache.getDocument(fullFilePath);
 
