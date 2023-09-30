@@ -3,6 +3,23 @@
 
 
 
+
+## v0.5.0 (2023-09-30)
+
+#### :rocket: Enhancement
+* `language-server`
+  * [#26](https://github.com/kaermorchen/twig-language-server/pull/26) Add completion support for empty embedded. ([@moetelo](https://github.com/moetelo))
+  * [#29](https://github.com/kaermorchen/twig-language-server/pull/29) Treat property function call as function call in semantic tokenization. ([@moetelo](https://github.com/moetelo))
+* `language-server`, `vscode`
+  * [#28](https://github.com/kaermorchen/twig-language-server/pull/28) Add `ConfigurationManager` for VS Code configuration. ([@moetelo](https://github.com/moetelo))
+* `vscode`
+  * [#22](https://github.com/kaermorchen/twig-language-server/pull/22) Remove unused imports. ([@moetelo](https://github.com/moetelo))
+* Other
+  * [#24](https://github.com/kaermorchen/twig-language-server/pull/24) Add `--disable-extensions` arg for VS Code in debug. ([@moetelo](https://github.com/moetelo))
+
+#### Committers: 1
+- Mikhail ([@moetelo](https://github.com/moetelo))
+
 ## v0.4.0 (2023-09-11)
 
 #### :rocket: Enhancement
