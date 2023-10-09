@@ -1,42 +1,63 @@
-import { Connection, Definition, DefinitionParams, Range } from 'vscode-languageserver';
+import {
+  Connection,
+  Definition,
+  DefinitionParams,
+  DocumentUri,
+  Range,
+} from 'vscode-languageserver';
 import { Server } from '../server';
-import { findNodeByPosition } from '../utils/find-element-by-position';
 import { SyntaxNode } from 'web-tree-sitter';
-import { templateUsingFunctions, templateUsingStatements } from '../constants/template-usage';
+import {
+  templateUsingFunctions,
+  templateUsingStatements,
+} from '../constants/template-usage';
+import { getStringNodeValue } from '../utils/node';
+import { TemplatePathMapping } from '../utils/symfony/twigConfig';
+import { documentUriToFsPath } from '../utils/document-uri-to-fs-path';
+import { fileStat } from '../utils/files/fileStat';
+import * as path from 'path';
+import { fsPathToDocumentUri } from '../utils/fs-path-to-document-uri';
+import { findNodeByPosition } from '../utils/find-element-by-position';
 
 export type onDefinitionHandlerReturn = ReturnType<
   Parameters<Connection['onDefinition']>[0]
 >;
 
-const isFunctionCall = (cursorNode: SyntaxNode | null, functionName: string): boolean => {
-  return !!cursorNode
-    && cursorNode.type === 'call_expression'
-    && cursorNode.childForFieldName('name')?.text === functionName;
+const isFunctionCall = (
+  node: SyntaxNode | null,
+  functionName: string
+): boolean => {
+  return (
+    !!node &&
+    node.type === 'call_expression' &&
+    node.childForFieldName('name')?.text === functionName
+  );
 };
 
-
-const isPathInsideTemplateEmbedding = (stringNode: SyntaxNode): boolean => {
-  if (stringNode.type !== 'string' || !stringNode.parent) {
+const isPathInsideTemplateEmbedding = (node: SyntaxNode): boolean => {
+  if (node.type !== 'string' || !node.parent) {
     return false;
   }
 
-  const isInsideStatement = templateUsingStatements.includes(stringNode.parent.type);
+  const isInsideStatement = templateUsingStatements.includes(node.parent.type);
 
   if (isInsideStatement) {
     return true;
   }
 
-  const isInsideFunctionCall = stringNode.parent?.type === 'arguments'
-    && templateUsingFunctions.some(func => isFunctionCall(stringNode.parent!.parent, func));
+  const isInsideFunctionCall =
+    node.parent?.type === 'arguments' &&
+    templateUsingFunctions.some((func) =>
+      isFunctionCall(node.parent!.parent, func)
+    );
 
   return isInsideFunctionCall;
 };
 
 export class DefinitionProvider {
-  private readonly defaultTemplatesDirectory = 'templates';
-  private templatesDirectory = this.defaultTemplatesDirectory;
-
   server: Server;
+
+  templateMappings: TemplatePathMapping[] = [];
 
   constructor(server: Server) {
     this.server = server;
@@ -44,37 +65,75 @@ export class DefinitionProvider {
     this.server.connection.onDefinition(this.onDefinition.bind(this));
   }
 
-  setTemplatesDirectory(templatesDirectory: string | undefined) {
-    this.templatesDirectory = templatesDirectory || this.defaultTemplatesDirectory;
-  }
-
-  async onDefinition(params: DefinitionParams): Promise<Definition | undefined> {
-    const uri = params.textDocument.uri;
-    const document = this.server.documentCache.getDocument(uri);
+  async onDefinition(
+    params: DefinitionParams
+  ): Promise<Definition | undefined> {
+    const document = this.server.documentCache.getDocument(params.textDocument.uri);
 
     if (!document) {
       return;
     }
 
     const cst = await document.cst();
-    const cursorNode = findNodeByPosition(cst.rootNode, params.position);
 
-    if (!cursorNode || !isPathInsideTemplateEmbedding(cursorNode)) {
+    const cursorNode = findNodeByPosition(
+      cst.rootNode,
+      params.position
+    );
+
+    if (!cursorNode) {
       return;
     }
 
-    const filePath = cursorNode.text.slice('"'.length, -'"'.length);
-    const fullFilePath = `${this.server.workspaceFolder.uri}/${this.templatesDirectory}/${filePath}`;
+    if (isPathInsideTemplateEmbedding(cursorNode)) {
+      const templateUri = await this.resolveTemplateUri(
+        getStringNodeValue(cursorNode)
+      );
 
-    const file = this.server.documentCache.getDocument(fullFilePath);
+      if (!templateUri) return;
 
-    if (!file) {
+      return this.resolveTemplateDefinition(templateUri);
+    }
+  }
+
+  async resolveTemplateUri(
+    includeArgument: string
+  ): Promise<DocumentUri | undefined> {
+    const workspaceFolderDirectory = documentUriToFsPath(
+      this.server.workspaceFolder.uri
+    );
+
+    for (const { namespace, directory } of this.templateMappings) {
+      if (!includeArgument.startsWith(namespace)) {
+        continue;
+      }
+
+      const includePath =
+        namespace === ''
+          ? path.join(directory, includeArgument)
+          : includeArgument.replace(namespace, directory);
+
+      const pathToTwig = path.resolve(workspaceFolderDirectory, includePath);
+
+      const stats = await fileStat(pathToTwig);
+      if (stats) {
+        return fsPathToDocumentUri(pathToTwig);
+      }
+    }
+
+    return undefined;
+  }
+
+  resolveTemplateDefinition(templatePath: string): Definition | undefined {
+    const document = this.server.documentCache.getDocument(templatePath);
+
+    if (!document) {
       return;
     }
 
     return {
-      uri: file.filePath,
+      uri: fsPathToDocumentUri(document.filePath),
       range: Range.create(0, 0, 0, 0),
-    }
+    };
   }
 }
