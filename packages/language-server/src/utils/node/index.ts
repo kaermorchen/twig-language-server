@@ -1,0 +1,1 @@
+export { getStringNodeValue } from './getStringNodeValue';
