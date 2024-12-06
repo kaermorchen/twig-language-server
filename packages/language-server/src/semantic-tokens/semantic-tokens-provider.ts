@@ -14,14 +14,22 @@ const tokenTypes = new Map<string, number>(
 );
 
 const functionTokenType = tokenTypes.get('function')!;
+const commentTokenType = tokenTypes.get('comment')!;
 
 const resolveTokenType = (node: TreeCursor) => {
-  if (node.nodeType === 'property' && node.currentNode().parent!.nextSibling?.type === 'arguments') {
+  if (
+    node.nodeType === 'property' &&
+    node.currentNode().parent!.nextSibling?.type === 'arguments'
+  ) {
     return functionTokenType;
   }
 
+  if (node.nodeType === 'inline_comment') {
+    return commentTokenType;
+  }
+
   return tokenTypes.get(node.nodeType);
-}
+};
 
 export class SemanticTokensProvider {
   server: Server;
