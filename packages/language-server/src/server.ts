@@ -17,6 +17,14 @@ import { SemanticTokensProvider } from './semantic-tokens/semantic-tokens-provid
 import { ConfigurationManager } from './configuration/configuration-manager';
 import { DefinitionProvider } from './definitions/definition-provider';
 
+export interface ServerConfig {
+  extensionPath: string;
+}
+
+export let serverConfig: ServerConfig = {
+  extensionPath: '',
+};
+
 export class Server {
   connection: Connection;
   documents: TextDocuments<TextDocument>;
@@ -41,6 +49,8 @@ export class Server {
     connection.onInitialize((initializeParams: InitializeParams) => {
       this.workspaceFolder = initializeParams.workspaceFolders![0];
       this.documentCache = new DocumentCache(this.workspaceFolder);
+      serverConfig.extensionPath =
+        initializeParams.initializationOptions?.extensionPath;
 
       this.clientCapabilities = initializeParams.capabilities;
 
