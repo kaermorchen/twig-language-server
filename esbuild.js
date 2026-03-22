@@ -6,7 +6,7 @@ const watch = process.argv.includes('--watch');
 
 async function main() {
   const serverCtx = await esbuild.context({
-    entryPoints: ['../language-server/src/index.ts'],
+    entryPoints: ['./src/server/index.ts'],
     bundle: true,
     format: 'cjs',
     minify: production,
@@ -21,14 +21,14 @@ async function main() {
       copy({
         resolveFrom: 'cwd',
         assets: {
-          from: ['../../node_modules/tree-sitter-twig/tree-sitter-twig.wasm'],
+          from: ['./node_modules/tree-sitter-twig/tree-sitter-twig.wasm'],
           to: ['out'],
         },
       }),
       copy({
         resolveFrom: 'cwd',
         assets: {
-          from: ['../../node_modules/web-tree-sitter/tree-sitter.wasm'],
+          from: ['./node_modules/web-tree-sitter/tree-sitter.wasm'],
           to: ['out'],
         },
       }),
@@ -36,7 +36,7 @@ async function main() {
   });
 
   const extensionCtx = await esbuild.context({
-    entryPoints: ['src/extension.ts'],
+    entryPoints: ['./src/client/extension.ts'],
     bundle: true,
     format: 'cjs',
     minify: production,
