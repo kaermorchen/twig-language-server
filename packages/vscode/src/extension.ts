@@ -1,7 +1,6 @@
 import {
   workspace,
   ExtensionContext,
-  window,
   WorkspaceFolder,
   RelativePattern,
 } from 'vscode';
@@ -11,19 +10,25 @@ import {
   ServerOptions,
   TransportKind,
 } from 'vscode-languageclient/node';
+import { logger, outputChannel } from './utils/logger';
 
-const outputChannel = window.createOutputChannel('Twig Language Server');
 const clients = new Map<string, LanguageClient>();
 
 export function activate(context: ExtensionContext) {
-  workspace.workspaceFolders?.forEach((folder) =>
-    addWorkspaceFolder(folder, context)
-  );
+  try {
+    workspace.workspaceFolders?.forEach((folder) =>
+      addWorkspaceFolder(folder, context),
+    );
 
-  workspace.onDidChangeWorkspaceFolders(({ added, removed }) => {
-    added.forEach((folder) => addWorkspaceFolder(folder, context));
-    removed.forEach((folder) => removeWorkspaceFolder(folder));
-  });
+    workspace.onDidChangeWorkspaceFolders(({ added, removed }) => {
+      added.forEach((folder) => addWorkspaceFolder(folder, context));
+      removed.forEach((folder) => removeWorkspaceFolder(folder));
+    });
+
+    logger.info('Twig extension activated');
+  } catch (error) {
+    logger.error('Failed to activate Twig extension', error);
+  }
 }
 
 export async function deactivate(): Promise<void> {
@@ -34,11 +39,11 @@ export async function deactivate(): Promise<void> {
 
 async function addWorkspaceFolder(
   workspaceFolder: WorkspaceFolder,
-  context: ExtensionContext
+  context: ExtensionContext,
 ): Promise<void> {
   const folderPath = workspaceFolder.uri.fsPath;
   const fileEvents = workspace.createFileSystemWatcher(
-    new RelativePattern(workspaceFolder, '*.twig')
+    new RelativePattern(workspaceFolder, '*.twig'),
   );
 
   context.subscriptions.push(fileEvents);
@@ -74,7 +79,7 @@ async function addWorkspaceFolder(
     'twig-language-server',
     'Twig Language Server',
     serverOptions,
-    clientOptions
+    clientOptions,
   );
 
   clients.set(folderPath, client);
@@ -83,7 +88,7 @@ async function addWorkspaceFolder(
 }
 
 async function removeWorkspaceFolder(
-  workspaceFolder: WorkspaceFolder
+  workspaceFolder: WorkspaceFolder,
 ): Promise<void> {
   const folderPath = workspaceFolder.uri.fsPath;
   const client = clients.get(folderPath);
