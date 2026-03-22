@@ -11,6 +11,7 @@ import {
   TransportKind,
 } from 'vscode-languageclient/node';
 import { logger, outputChannel } from './utils/logger';
+import { join } from 'path';
 
 const clients = new Map<string, LanguageClient>();
 
@@ -52,11 +53,14 @@ async function addWorkspaceFolder(
     return;
   }
 
-  const module = require.resolve('twig-language-server');
+  const serverModule = context.asAbsolutePath(
+    join('twig-language-server', 'out', 'index.js'),
+  );
+  // const module = require.resolve('twig-language-server');
   const serverOptions: ServerOptions = {
-    run: { module, transport: TransportKind.ipc },
+    run: { module: serverModule, transport: TransportKind.ipc },
     debug: {
-      module,
+      module: serverModule,
       transport: TransportKind.ipc,
       options: { execArgv: ['--nolazy', `--inspect=6009`] },
     },
