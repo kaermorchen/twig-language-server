@@ -53,10 +53,7 @@ async function addWorkspaceFolder(
     return;
   }
 
-  const serverModule = context.asAbsolutePath(
-    join('twig-language-server', 'out', 'index.js'),
-  );
-  // const module = require.resolve('twig-language-server');
+  const serverModule = context.asAbsolutePath(join('out', 'server.js'));
   const serverOptions: ServerOptions = {
     run: { module: serverModule, transport: TransportKind.ipc },
     debug: {
@@ -77,6 +74,9 @@ async function addWorkspaceFolder(
       },
     ],
     synchronize: { fileEvents },
+    initializationOptions: {
+      extensionPath: context.extensionPath,
+    },
   };
 
   const client = new LanguageClient(
