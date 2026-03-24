@@ -7,29 +7,39 @@ import { fsPathToDocumentUri } from './utils/fs-path-to-document-uri';
 import Parser from 'web-tree-sitter';
 
 export class Document {
-  filePath: string;
-  text: string | null = null;
+  documentUri: string;
+  text: string | undefined;
+  cstCache: Parser.Tree | undefined;
 
-  constructor(filePath: string) {
-    this.filePath = filePath;
+  constructor(documentUri: DocumentUri) {
+    this.documentUri = documentUri;
   }
 
   async setText(text: string) {
+    this.cstCache = undefined;
     this.text = text;
   }
 
-  async getText() {
+  async getText(): Promise<string> {
     if (this.text) {
-      return Promise.resolve(this.text);
+      return this.text;
     }
 
-    return await readFile(this.filePath, 'utf-8');
+    this.text = await readFile(this.documentUri, 'utf-8');
+
+    return this.text;
   }
 
   async cst(): Promise<Parser.Tree> {
+    if (this.cstCache) {
+      return this.cstCache;
+    }
+
     const text = await this.getText();
 
-    return await parseTwig(text);
+    this.cstCache = await parseTwig(text);
+
+    return this.cstCache;
   }
 }
 
@@ -39,25 +49,17 @@ export class DocumentCache {
 
   constructor(workspaceFolder: WorkspaceFolder) {
     this.workspaceFolder = workspaceFolder;
-
-    this.initDocuments();
   }
 
-  async initDocuments() {
-    const iterator = readDir(URI.parse(this.workspaceFolder.uri).fsPath);
-    const reIsTwig = /.twig$/i;
-
-    for await (const filePath of iterator) {
-      if (reIsTwig.test(filePath)) {
-        this.documents.set(
-          fsPathToDocumentUri(filePath),
-          new Document(filePath)
-        );
-      }
+  async getDocument(documentUri: DocumentUri): Promise<Document | undefined> {
+    if (this.documents.has(documentUri)) {
+      return this.documents.get(documentUri);
     }
-  }
 
-  getDocument(documentUri: DocumentUri) {
-    return this.documents.get(documentUri);
+    const doc = new Document(documentUri);
+
+    this.documents.set(documentUri, doc);
+
+    return doc;
   }
 }

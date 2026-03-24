@@ -16,14 +16,14 @@ export class CompletionProvider {
 
     this.server.connection.onCompletion(this.onCompletion.bind(this));
     this.server.connection.onCompletionResolve(
-      this.onCompletionResolve.bind(this)
+      this.onCompletionResolve.bind(this),
     );
   }
 
   async onCompletion(params: CompletionParams) {
     let completions: CompletionItem[] = [];
     const uri = params.textDocument.uri;
-    const document = this.server.documentCache.getDocument(uri);
+    const document = await this.server.documentCache.getDocument(uri);
 
     if (!document) {
       return;
@@ -45,7 +45,7 @@ export class CompletionProvider {
       templatePaths(
         cursorNode,
         uri,
-        this.server.documentCache.documents.keys()
+        this.server.documentCache.documents.keys(),
       ),
     ].forEach((result) => {
       if (Array.isArray(result)) {

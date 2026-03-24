@@ -79,13 +79,15 @@ export class Server {
       }
     });
 
-    this.documents.onDidChangeContent((change) => {
+    this.documents.onDidChangeContent(async (change) => {
       validateTwigDocument(change.document, connection);
 
       // Update text in documentCache
-      this.documentCache
-        .getDocument(change.document.uri)
-        ?.setText(change.document.getText());
+      const doc = await this.documentCache.getDocument(change.document.uri);
+
+      if (doc) {
+        doc.setText(change.document.getText());
+      }
     });
 
     this.documents.listen(connection);
