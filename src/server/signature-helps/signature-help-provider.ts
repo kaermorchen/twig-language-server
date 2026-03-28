@@ -11,15 +11,15 @@ export class SignatureHelpProvider {
     this.server = server;
 
     this.server.connection.onSignatureHelp(
-      this.provideSignatureHelp.bind(this)
+      this.provideSignatureHelp.bind(this),
     );
   }
 
   async provideSignatureHelp(
-    params: SignatureHelpParams
+    params: SignatureHelpParams,
   ): Promise<SignatureHelp | null | undefined> {
     const uri = params.textDocument.uri;
-    const document = this.server.documentCache.getDocument(uri);
+    const document = await this.server.documentCache.getDocument(uri);
 
     if (!document) {
       return;

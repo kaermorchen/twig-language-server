@@ -10,7 +10,7 @@ import { semanticTokensLegend } from './tokens-provider';
 import { TreeCursor } from 'web-tree-sitter';
 
 const tokenTypes = new Map<string, number>(
-  semanticTokensLegend.tokenTypes.map((v, i) => [v, i])
+  semanticTokensLegend.tokenTypes.map((v, i) => [v, i]),
 );
 
 const functionTokenType = tokenTypes.get('function')!;
@@ -38,14 +38,14 @@ export class SemanticTokensProvider {
     this.server = server;
 
     this.server.connection.languages.semanticTokens.on(
-      this.serverRequestHandler.bind(this)
+      this.serverRequestHandler.bind(this),
     );
   }
 
   async serverRequestHandler(params: SemanticTokensParams) {
     const semanticTokens: SemanticTokens = { data: [] };
     const uri = params.textDocument.uri;
-    const document = this.server.documentCache.getDocument(uri);
+    const document = await this.server.documentCache.getDocument(uri);
 
     if (!document) {
       return semanticTokens;

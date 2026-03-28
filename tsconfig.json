@@ -1,11 +1,21 @@
 {
-  "references": [
-    {
-      "path": "packages/language-server"
-    },
-    {
-      "path": "packages/vscode"
-    }
+  "compilerOptions": {
+    "module": "commonjs",
+    "target": "ES2020",
+    "outDir": "out",
+    "lib": [
+      "ES2020"
+    ],
+    "sourceMap": true,
+    "rootDir": "src",
+    "strict": true,
+    "moduleResolution": "node",
+    "esModuleInterop": true,
+  },
+  "include": [
+    "src"
   ],
-  "files": []
+  "exclude": [
+    "node_modules"
+  ]
 }

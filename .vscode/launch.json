@@ -7,11 +7,11 @@
       "request": "launch",
       "preLaunchTask": "${defaultBuildTask}",
       "args": [
-        "--extensionDevelopmentPath=${workspaceFolder}/packages/vscode",
+        "--extensionDevelopmentPath=${workspaceFolder}",
         "--disable-extensions",
       ],
       "outFiles": [
-        "${workspaceFolder}/packages/vscode/out/*.js"
+        "${workspaceFolder}/out/*.js"
       ],
     },
     {
@@ -23,7 +23,7 @@
       "sourceMaps": true,
       "smartStep": true,
       "outFiles": [
-        "${workspaceRoot}/packages/language-server/out/**/*.js"
+        "${workspaceRoot}/out/*.js"
       ]
     }
   ],

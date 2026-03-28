@@ -1,0 +1,6 @@
+# Local ingore files
+src
+.vscodeignore
+package-lock.json
+tsconfig.json
+esbuild.js

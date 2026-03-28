@@ -25,7 +25,7 @@ export type onDefinitionHandlerReturn = ReturnType<
 
 const isFunctionCall = (
   node: SyntaxNode | null,
-  functionName: string
+  functionName: string,
 ): boolean => {
   return (
     !!node &&
@@ -48,7 +48,7 @@ const isPathInsideTemplateEmbedding = (node: SyntaxNode): boolean => {
   const isInsideFunctionCall =
     node.parent?.type === 'arguments' &&
     templateUsingFunctions.some((func) =>
-      isFunctionCall(node.parent!.parent, func)
+      isFunctionCall(node.parent!.parent, func),
     );
 
   return isInsideFunctionCall;
@@ -66,9 +66,11 @@ export class DefinitionProvider {
   }
 
   async onDefinition(
-    params: DefinitionParams
+    params: DefinitionParams,
   ): Promise<Definition | undefined> {
-    const document = this.server.documentCache.getDocument(params.textDocument.uri);
+    const document = await this.server.documentCache.getDocument(
+      params.textDocument.uri,
+    );
 
     if (!document) {
       return;
@@ -76,10 +78,7 @@ export class DefinitionProvider {
 
     const cst = await document.cst();
 
-    const cursorNode = findNodeByPosition(
-      cst.rootNode,
-      params.position
-    );
+    const cursorNode = findNodeByPosition(cst.rootNode, params.position);
 
     if (!cursorNode) {
       return;
@@ -87,7 +86,7 @@ export class DefinitionProvider {
 
     if (isPathInsideTemplateEmbedding(cursorNode)) {
       const templateUri = await this.resolveTemplateUri(
-        getStringNodeValue(cursorNode)
+        getStringNodeValue(cursorNode),
       );
 
       if (!templateUri) return;
@@ -97,10 +96,10 @@ export class DefinitionProvider {
   }
 
   async resolveTemplateUri(
-    includeArgument: string
+    includeArgument: string,
   ): Promise<DocumentUri | undefined> {
     const workspaceFolderDirectory = documentUriToFsPath(
-      this.server.workspaceFolder.uri
+      this.server.workspaceFolder.uri,
     );
 
     for (const { namespace, directory } of this.templateMappings) {
@@ -124,15 +123,17 @@ export class DefinitionProvider {
     return undefined;
   }
 
-  resolveTemplateDefinition(templatePath: string): Definition | undefined {
-    const document = this.server.documentCache.getDocument(templatePath);
+  async resolveTemplateDefinition(
+    templatePath: string,
+  ): Promise<Definition | undefined> {
+    const document = await this.server.documentCache.getDocument(templatePath);
 
     if (!document) {
       return;
     }
 
     return {
-      uri: fsPathToDocumentUri(document.filePath),
+      uri: document.documentUri,
       range: Range.create(0, 0, 0, 0),
     };
   }
