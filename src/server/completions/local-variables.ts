@@ -16,7 +16,7 @@ export function localVariables(cursorNode: SyntaxNode) {
       cursor.gotoFirstChild();
 
       while (cursor.gotoNextSibling()) {
-        if (cursor.currentFieldName() === 'variable') {
+        if (cursor.currentFieldName === 'variable') {
           completions.push({
             label: cursor.nodeText,
             kind: CompletionItemKind.Variable,

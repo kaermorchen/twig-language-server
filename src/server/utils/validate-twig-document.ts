@@ -10,13 +10,13 @@ import { pointToPosition } from './point-to-position';
 
 export async function validateTwigDocument(
   document: TextDocument,
-  connection: Connection
+  connection: Connection,
 ): Promise<void> {
   const text = document.getText();
   const diagnostics: Diagnostic[] = [];
   const cst = await parseTwig(text);
 
-  if (cst.rootNode.hasError()) {
+  if (cst.rootNode.hasError) {
     const cursor = cst.walk();
     const nodes = new PreOrderCursorIterator(cursor);
 

@@ -17,9 +17,9 @@ export function localVariables(cursorNode: SyntaxNode): onHoverHandlerReturn {
       const values = [];
 
       while (cursor.gotoNextSibling()) {
-        if (cursor.currentFieldName() === 'variable') {
+        if (cursor.currentFieldName === 'variable') {
           keys.push(cursor.nodeText);
-        } else if (cursor.currentFieldName() === 'value') {
+        } else if (cursor.currentFieldName === 'value') {
           values.push(cursor.nodeText);
         }
       }
