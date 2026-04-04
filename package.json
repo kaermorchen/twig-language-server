@@ -12,11 +12,6 @@
   "main": "./out/extension.js",
   "publisher": "stanislav",
   "repository": "https://github.com/kaermorchen/twig-language-server",
-  "files": [
-    "out/",
-    "LICENSE",
-    "README.md"
-  ],
   "keywords": [
     "Twig"
   ],

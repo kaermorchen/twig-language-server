@@ -1,6 +1,12 @@
-# Local ingore files
-src
-.vscodeignore
-package-lock.json
-tsconfig.json
-esbuild.js
+# Ignore all
+*
+*/**
+
+# Excludes
+!out/**/*
+!assets/**/*
+!languages/**/*
+!syntaxes/**/*
+!package.json
+!README.md
+!LICENSE
