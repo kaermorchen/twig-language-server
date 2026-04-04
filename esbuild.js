@@ -6,7 +6,7 @@ const watch = process.argv.includes('--watch');
 
 async function main() {
   const serverCtx = await esbuild.context({
-    entryPoints: ['./src/server/index.ts'],
+    entryPoints: ['./src/server/volar-server.ts'],
     bundle: true,
     format: 'cjs',
     minify: production,
