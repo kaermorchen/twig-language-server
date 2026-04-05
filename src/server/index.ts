@@ -26,6 +26,7 @@ connection.onInitialize((params) => {
     params.initializationOptions.typescript.tsdk,
     params.locale,
   );
+
   return server.initialize(
     params,
     createTypeScriptProject(tsdk.typescript, tsdk.diagnosticMessages, () => ({
@@ -36,7 +37,7 @@ connection.onInitialize((params) => {
     [
       // semanticTokensPlugin,
       // createHtmlService(),
-      // createCssService(),
+      createCssService(),
       // createEmmetService(),
       // ...createTypeScriptServices(tsdk.typescript),
     ],

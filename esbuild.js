@@ -5,85 +5,69 @@ const production = process.argv.includes('--production');
 const watch = process.argv.includes('--watch');
 
 async function main() {
-  const serverCtx = await esbuild.context({
-    entryPoints: ['./src/server/index.ts'],
-    bundle: true,
-    format: 'cjs',
-    minify: production,
-    sourcemap: !production,
-    sourcesContent: false,
-    platform: 'node',
-    outfile: 'out/server.js',
-    logLevel: 'warning',
-    plugins: [
-      /* add to the end of plugins array */
-      esbuildProblemMatcherPlugin,
-      copy({
-        resolveFrom: 'cwd',
-        assets: {
-          from: ['./node_modules/tree-sitter-twig/tree-sitter-twig.wasm'],
-          to: ['out'],
+  return require('esbuild')
+    .context({
+      entryPoints: {
+        client: './src/client/extension.ts',
+        server: './src/server/index.ts',
+      },
+      sourcemap: true,
+      bundle: true,
+      metafile: process.argv.includes('--metafile'),
+      outdir: './out',
+      external: ['vscode'],
+      format: 'cjs',
+      platform: 'node',
+      tsconfig: './tsconfig.json',
+      define: { 'process.env.NODE_ENV': '"production"' },
+      minify: process.argv.includes('--minify'),
+      plugins: [
+        {
+          name: 'umd2esm',
+          setup(build) {
+            build.onResolve(
+              { filter: /^(vscode-.*-languageservice|jsonc-parser)/ },
+              (args) => {
+                const pathUmdMay = require.resolve(args.path, {
+                  paths: [args.resolveDir],
+                });
+                // Call twice the replace is to solve the problem of the path in Windows
+                const pathEsm = pathUmdMay
+                  .replace('/umd/', '/esm/')
+                  .replace('\\umd\\', '\\esm\\');
+                return { path: pathEsm };
+              },
+            );
+          },
         },
-      }),
-      copy({
-        resolveFrom: 'cwd',
-        assets: {
-          from: ['./node_modules/web-tree-sitter/tree-sitter.wasm'],
-          to: ['out'],
-        },
-      }),
-    ],
-  });
-
-  const extensionCtx = await esbuild.context({
-    entryPoints: ['./src/client/extension.ts'],
-    bundle: true,
-    format: 'cjs',
-    minify: production,
-    sourcemap: !production,
-    sourcesContent: false,
-    platform: 'node',
-    outfile: 'out/extension.js',
-    external: ['vscode'],
-    logLevel: 'warning',
-    plugins: [
-      /* add to the end of plugins array */
-      esbuildProblemMatcherPlugin,
-    ],
-  });
-
-  if (watch) {
-    await Promise.all([serverCtx.watch(), extensionCtx.watch()]);
-    console.log('Watching for changes...');
-  } else {
-    await Promise.all([serverCtx.rebuild(), extensionCtx.rebuild()]);
-    await serverCtx.dispose();
-    await extensionCtx.dispose();
-  }
+        copy({
+          resolveFrom: 'cwd',
+          assets: {
+            from: ['./node_modules/tree-sitter-twig/tree-sitter-twig.wasm'],
+            to: ['out'],
+          },
+        }),
+        copy({
+          resolveFrom: 'cwd',
+          assets: {
+            from: ['./node_modules/web-tree-sitter/tree-sitter.wasm'],
+            to: ['out'],
+          },
+        }),
+      ],
+    })
+    .then(async (ctx) => {
+      console.log('building...');
+      if (process.argv.includes('--watch')) {
+        await ctx.watch();
+        console.log('watching...');
+      } else {
+        await ctx.rebuild();
+        await ctx.dispose();
+        console.log('finished.');
+      }
+    });
 }
-
-/**
- * @type {import('esbuild').Plugin}
- */
-const esbuildProblemMatcherPlugin = {
-  name: 'esbuild-problem-matcher',
-
-  setup(build) {
-    build.onStart(() => {
-      console.log('[watch] build started');
-    });
-    build.onEnd((result) => {
-      result.errors.forEach(({ text, location }) => {
-        console.error(`✘ [ERROR] ${text}`);
-        if (location == null) return;
-        console.error(
-          `    ${location.file}:${location.line}:${location.column}:`,
-        );
-      });
-      console.log('[watch] build finished');
-    });
-  },
-};
 
 main().catch((e) => {
   console.error(e);
