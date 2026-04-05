@@ -13,6 +13,7 @@ import Parser from 'web-tree-sitter';
 import type { SyntaxNode } from 'web-tree-sitter';
 import { PreOrderCursorIterator } from '../utils/pre-order-cursor-iterator';
 import { resolveTokenType } from './semantic-tokens-plugin';
+import * as html from 'vscode-html-languageservice';
 
 export const twigLanguagePlugin: LanguagePlugin<URI> = {
   getLanguageId(uri) {
@@ -20,7 +21,7 @@ export const twigLanguagePlugin: LanguagePlugin<URI> = {
       return 'twig';
     }
   },
-  createVirtualCode(_uri, languageId, snapshot) {
+  createVirtualCode(uri, languageId, snapshot) {
     if (languageId === 'twig') {
       return new TwigVirtualCode(snapshot);
     }
@@ -36,89 +37,207 @@ export const twigLanguagePlugin: LanguagePlugin<URI> = {
     getServiceScript() {
       return undefined;
     },
-    getExtraServiceScripts(fileName, root) {
-      const scripts: TypeScriptExtraServiceScript[] = [];
-      for (const code of forEachEmbeddedCode(root)) {
-        // Если есть embedded JavaScript/TypeScript коды, можно добавить
-        // Пока оставим пустым
-      }
-      return scripts;
-    },
+    // getExtraServiceScripts(fileName, root) {
+    //   const scripts: TypeScriptExtraServiceScript[] = [];
+    //   for (const code of forEachEmbeddedCode(root)) {
+    //     // Если есть embedded JavaScript/TypeScript коды, можно добавить
+    //     // Пока оставим пустым
+    //   }
+    //   return scripts;
+    // },
   },
 };
 
+const htmlLs = html.getLanguageService();
+
 export class TwigVirtualCode implements VirtualCode {
   id = 'root';
-  languageId = 'twig';
-  mappings: CodeMapping[];
+  languageId = 'html';
+  mappings: CodeMapping[] = [];
   embeddedCodes: VirtualCode[] = [];
-  tree?: Parser.Tree;
-  private treePromise: Promise<Parser.Tree> | null = null;
+  htmlDocument: html.HTMLDocument;
+  // tree?: Parser.Tree;
+  // private treePromise: Promise<Parser.Tree> | null = null;
 
   constructor(public snapshot: ts.IScriptSnapshot) {
-    // 1:1 mapping всего документа
     this.mappings = [
       {
         sourceOffsets: [0],
         generatedOffsets: [0],
         lengths: [snapshot.getLength()],
         data: {
-          completion: false,
-          format: false,
-          navigation: false,
+          completion: true,
+          format: true,
+          navigation: true,
           semantic: true,
-          structure: false,
-          verification: false,
+          structure: true,
+          verification: true,
         },
       },
     ];
 
-    this.ensureTree();
+    this.htmlDocument = htmlLs.parseHTMLDocument(
+      html.TextDocument.create(
+        '',
+        'html',
+        0,
+        snapshot.getText(0, snapshot.getLength()),
+      ),
+    );
+
+    // this.onSnapshotUpdated();
+
+    // // 1:1 mapping всего документа
+    // this.mappings = [
+    //   {
+    //     sourceOffsets: [0],
+    //     generatedOffsets: [0],
+    //     lengths: [snapshot.getLength()],
+    //     data: {
+    //       completion: false,
+    //       format: false,
+    //       navigation: false,
+    //       semantic: true,
+    //       structure: false,
+    //       verification: false,
+    //     },
+    //   },
+    // ];
+
+    // this.ensureTree();
   }
 
-  private async ensureTree(): Promise<Parser.Tree> {
-    if (this.tree) {
-      return this.tree;
-    }
-    if (!this.treePromise) {
-      this.treePromise = parseTwig(
-        this.snapshot.getText(0, this.snapshot.getLength()),
-      );
-    }
-    this.tree = await this.treePromise;
-    await this.updateEmbeddedCodes();
-    return this.tree;
-  }
+  private async onSnapshotUpdated() {
+    const text = this.snapshot.getText(0, this.snapshot.getLength());
+    this.embeddedCodes = [];
+    const tree = await parseTwig(text);
+    let maskedHtml = '';
 
-  private async updateEmbeddedCodes(): Promise<void> {
-    if (!this.tree) {
-      return;
-    }
-    const embedded: VirtualCode[] = [];
-    const root = this.tree.rootNode;
-    this.collectEmbeddedNodes(root, embedded);
-    this.embeddedCodes = embedded;
-  }
+    for (const node of tree.rootNode.children) {
+      if (node.type === 'content') {
+        maskedHtml += node.text;
+      } else {
+        maskedHtml += ' '.repeat(node.text.length);
 
-  private collectEmbeddedNodes(node: SyntaxNode, result: VirtualCode[]): void {
-    if (!this.tree) {
-      return;
-    }
+        // const fullMatch = node.text;
+        // const content = match[1];        // " content "
+        // const start = match.index;       // Начало {{
+        // const contentStart = start + 2;  // Начало контента после {{
 
-    for (const node of this.tree.rootNode.children) {
-      if (node.type !== 'content') {
-        result.push(
-          new TwigBlockVirtualCode(
-            `${node.type}_${node.startIndex}`,
-            this.snapshot,
-            node.startIndex,
-            node.endIndex - node.startIndex,
-            node.type,
-          ),
-        );
+        this.embeddedCodes.push({
+          id: 'twig_' + node.startIndex,
+          languageId: 'typescript',
+          snapshot: {
+            getText: (s, e) => node.text.substring(s, e),
+            getLength: () => node.text.length,
+            getChangeRange: () => undefined,
+          },
+          mappings: [
+            {
+              sourceOffsets: [node.startIndex], // Указываем, где в ориг. файле начало
+              generatedOffsets: [0],
+              lengths: [node.text.length],
+              data: {
+                verification: true,
+                completion: true,
+                semantic: true,
+                navigation: true,
+                structure: true,
+                format: true,
+              },
+            },
+          ],
+          embeddedCodes: [],
+        });
+
+        // this.embeddedCodes.push(
+        //   new TwigBlockVirtualCode(
+        //     `${node.type}_${node.startIndex}`,
+        //     this.snapshot,
+        //     node.startIndex,
+        //     node.endIndex - node.startIndex,
+        //     node.type,
+        //   ),
+        // );
+        // result.push(
+        //   new TwigBlockVirtualCode(
+        //     `${node.type}_${node.startIndex}`,
+        //     this.snapshot,
+        //     node.startIndex,
+        //     node.endIndex - node.startIndex,
+        //     node.type,
+        //   ),
+        // );
       }
     }
+
+    // Сохраняем маскированный код для HTML-сервиса
+    this.snapshot = {
+      getText: (start, end) => maskedHtml.substring(start, end),
+      getLength: () => maskedHtml.length,
+      getChangeRange: () => undefined,
+    };
+
+    this.mappings = [
+      {
+        sourceOffsets: [0],
+        generatedOffsets: [0],
+        lengths: [text.length],
+        data: {
+          verification: true,
+          completion: true,
+          semantic: true,
+          navigation: true,
+          structure: true,
+          format: true,
+        },
+      },
+    ];
   }
+
+  // private async ensureTree(): Promise<Parser.Tree> {
+  //   if (this.tree) {
+  //     return this.tree;
+  //   }
+  //   if (!this.treePromise) {
+  //     this.treePromise = parseTwig(
+  //       this.snapshot.getText(0, this.snapshot.getLength()),
+  //     );
+  //   }
+  //   this.tree = await this.treePromise;
+  //   await this.updateEmbeddedCodes();
+  //   return this.tree;
+  // }
+
+  // private async updateEmbeddedCodes(): Promise<void> {
+  //   if (!this.tree) {
+  //     return;
+  //   }
+  //   const embedded: VirtualCode[] = [];
+  //   const root = this.tree.rootNode;
+  //   this.collectEmbeddedNodes(root, embedded);
+  //   this.embeddedCodes = embedded;
+  // }
+
+  // private collectEmbeddedNodes(node: SyntaxNode, result: VirtualCode[]): void {
+  //   if (!this.tree) {
+  //     return;
+  //   }
+
+  //   for (const node of this.tree.rootNode.children) {
+  //     if (node.type !== 'content') {
+  //       result.push(
+  //         new TwigBlockVirtualCode(
+  //           `${node.type}_${node.startIndex}`,
+  //           this.snapshot,
+  //           node.startIndex,
+  //           node.endIndex - node.startIndex,
+  //           node.type,
+  //         ),
+  //       );
+  //     }
+  //   }
+  // }
 }
 
 class TwigBlockVirtualCode implements VirtualCode {

@@ -29,10 +29,12 @@ connection.onInitialize((params) => {
   return server.initialize(
     params,
     createTypeScriptProject(tsdk.typescript, tsdk.diagnosticMessages, () => ({
-      languagePlugins: [twigLanguagePlugin],
+      languagePlugins: [
+        // twigLanguagePlugin
+      ],
     })),
     [
-      semanticTokensPlugin,
+      // semanticTokensPlugin,
       // createHtmlService(),
       // createCssService(),
       // createEmmetService(),

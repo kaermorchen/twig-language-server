@@ -58,7 +58,6 @@ export const semanticTokensPlugin: LanguageServicePlugin = {
 async function provideTwigSemanticTokens(
   document: TextDocument,
 ): Promise<SemanticToken[]> {
-  console.log('provideTwigSemanticTokens');
   const content = document.getText();
   const tree = await parseTwig(content);
 
