@@ -32,13 +32,18 @@
   "author": "Stanislav Romanov <kaermorchen@gmail.com>",
   "license": "Mozilla Public License 2.0",
   "dependencies": {
+    "@volar/language-server": "^2.0.0",
+    "@volar/vscode": "^2.4.28",
     "tree-sitter-twig": "^0.8.2",
+    "volar-service-css": "^0.0.70",
+    "volar-service-emmet": "^0.0.70",
+    "volar-service-html": "^0.0.70",
+    "volar-service-typescript": "^0.0.70",
     "vscode-languageclient": "^8.1.0",
     "vscode-languageserver": "^8.1.0",
     "vscode-languageserver-textdocument": "^1.0.8",
     "vscode-uri": "^3.0.7",
-    "web-tree-sitter": "0.24.7",
-    "@volar/language-server": "^2.0.0"
+    "web-tree-sitter": "0.24.7"
   },
   "devDependencies": {
     "@types/node": "^20.2.6",

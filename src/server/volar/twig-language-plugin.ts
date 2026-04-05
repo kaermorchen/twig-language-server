@@ -12,7 +12,7 @@ import Parser from 'web-tree-sitter';
 
 export const twigLanguagePlugin: LanguagePlugin<URI> = {
   getLanguageId(uri) {
-    if (uri.path.endsWith('.twig') || uri.path.endsWith('.html.twig')) {
+    if (uri.path.endsWith('.twig')) {
       return 'twig';
     }
   },

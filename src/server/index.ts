@@ -1,8 +1,96 @@
-import { createConnection, ProposedFeatures } from 'vscode-languageserver/node';
-import { Server } from './server';
+// import { createConnection, ProposedFeatures } from 'vscode-languageserver/node';
+import { Server, serverConfig } from './server';
+import {
+  createConnection,
+  createServer,
+  createTypeScriptProject,
+  Diagnostic,
+  loadTsdkByPath,
+} from '@volar/language-server/node';
+import { create as createCssService } from 'volar-service-css';
+import { create as createEmmetService } from 'volar-service-emmet';
+import { create as createHtmlService } from 'volar-service-html';
+import { create as createTypeScriptServices } from 'volar-service-typescript';
+import { URI } from 'vscode-uri';
+import { semanticTokensPlugin } from './volar/semantic-tokens-plugin';
+import { twigLanguagePlugin } from './volar/twig-language-plugin';
+// import { html1LanguagePlugin, Html1VirtualCode } from './languagePlugin';
 
-const connection = createConnection(ProposedFeatures.all);
+// const connection = createConnection(ProposedFeatures.all);
 
-new Server(connection);
+// new Server(connection);
+
+// connection.listen();
+
+const connection = createConnection();
+const server = createServer(connection);
 
 connection.listen();
+
+connection.onInitialize((params) => {
+  serverConfig.extensionPath = params.initializationOptions?.extensionPath;
+
+  const tsdk = loadTsdkByPath(
+    params.initializationOptions.typescript.tsdk,
+    params.locale,
+  );
+  return server.initialize(
+    params,
+    createTypeScriptProject(tsdk.typescript, tsdk.diagnosticMessages, () => ({
+      languagePlugins: [
+        // twigLanguagePlugin
+      ],
+    })),
+    [
+      semanticTokensPlugin,
+      // createHtmlService(),
+      // createCssService(),
+      // createEmmetService(),
+      // ...createTypeScriptServices(tsdk.typescript),
+      // {
+      // 	capabilities: {
+      // 		diagnosticProvider: {
+      // 			interFileDependencies: false,
+      // 			workspaceDiagnostics: false,
+      // 		},
+      // 	},
+      // 	create(context) {
+      // 		return {
+      // 			provideDiagnostics(document) {
+      // 				const decoded = context.decodeEmbeddedDocumentUri(URI.parse(document.uri));
+      // 				if (!decoded) {
+      // 					// Not a embedded document
+      // 					return;
+      // 				}
+      // 				const virtualCode = context.language.scripts.get(decoded[0])?.generated?.embeddedCodes.get(decoded[1]);
+      // 				if (!(virtualCode instanceof Html1VirtualCode)) {
+      // 					return;
+      // 				}
+      // 				const styleNodes = virtualCode.htmlDocument.roots.filter(root => root.tag === 'style');
+      // 				if (styleNodes.length <= 1) {
+      // 					return;
+      // 				}
+      // 				const errors: Diagnostic[] = [];
+      // 				for (let i = 1; i < styleNodes.length; i++) {
+      // 					errors.push({
+      // 						severity: 2,
+      // 						range: {
+      // 							start: document.positionAt(styleNodes[i].start),
+      // 							end: document.positionAt(styleNodes[i].end),
+      // 						},
+      // 						source: 'html1',
+      // 						message: 'Only one style tag is allowed.',
+      // 					});
+      // 				}
+      // 				return errors;
+      // 			},
+      // 		};
+      // 	},
+      // },
+    ],
+  );
+});
+
+connection.onInitialized(server.initialized);
+
+connection.onShutdown(server.shutdown);

@@ -3,15 +3,25 @@ import {
   ExtensionContext,
   WorkspaceFolder,
   RelativePattern,
+  Uri,
 } from 'vscode';
+// import {
+//   LanguageClient,
+//   LanguageClientOptions,
+//   ServerOptions,
+//   TransportKind,
+// } from 'vscode-languageclient/node';
 import {
+  BaseLanguageClient,
   LanguageClient,
   LanguageClientOptions,
   ServerOptions,
   TransportKind,
-} from 'vscode-languageclient/node';
+} from '@volar/vscode/node';
 import { logger, outputChannel } from './utils/logger';
 import { join } from 'path';
+import { activateAutoInsertion, createLabsInfo, getTsdk } from '@volar/vscode';
+import * as serverProtocol from '@volar/language-server/protocol';
 
 const clients = new Map<string, LanguageClient>();
 
@@ -41,25 +51,32 @@ export async function deactivate(): Promise<void> {
 async function addWorkspaceFolder(
   workspaceFolder: WorkspaceFolder,
   context: ExtensionContext,
-): Promise<void> {
+) {
   const folderPath = workspaceFolder.uri.fsPath;
-  const fileEvents = workspace.createFileSystemWatcher(
-    new RelativePattern(workspaceFolder, '*.twig'),
-  );
 
-  context.subscriptions.push(fileEvents);
+  // const fileEvents = workspace.createFileSystemWatcher(
+  //   new RelativePattern(workspaceFolder, '*.twig'),
+  // );
+
+  // context.subscriptions.push(fileEvents);
 
   if (clients.has(folderPath)) {
     return;
   }
 
-  const serverModule = context.asAbsolutePath(join('out', 'server.js'));
+  const serverModule = Uri.joinPath(context.extensionUri, 'out', 'server.js');
+  const runOptions = { execArgv: <string[]>[] };
+  const debugOptions = { execArgv: ['--nolazy', '--inspect=' + 6009] };
   const serverOptions: ServerOptions = {
-    run: { module: serverModule, transport: TransportKind.ipc },
-    debug: {
-      module: serverModule,
+    run: {
+      module: serverModule.fsPath,
       transport: TransportKind.ipc,
-      options: { execArgv: ['--nolazy', `--inspect=6009`] },
+      options: runOptions,
+    },
+    debug: {
+      module: serverModule.fsPath,
+      transport: TransportKind.ipc,
+      options: debugOptions,
     },
   };
 
@@ -68,14 +85,17 @@ async function addWorkspaceFolder(
     outputChannel,
     documentSelector: [
       {
-        scheme: 'file',
+        // scheme: 'file',
         language: 'twig',
-        pattern: `${folderPath}/**`,
+        // pattern: `${folderPath}/**`,
       },
     ],
-    synchronize: { fileEvents },
+    // synchronize: { fileEvents },
     initializationOptions: {
       extensionPath: context.extensionPath,
+      typescript: {
+        tsdk: (await getTsdk(context))!.tsdk,
+      },
     },
   };
 
@@ -89,6 +109,13 @@ async function addWorkspaceFolder(
   clients.set(folderPath, client);
 
   await client.start();
+
+  activateAutoInsertion('twig', client);
+
+  // support for https://marketplace.visualstudio.com/items?itemName=johnsoncodehk.volarjs-labs
+  const labsInfo = createLabsInfo(serverProtocol);
+  labsInfo.addLanguageClient(client);
+  return labsInfo.extensionExports;
 }
 
 async function removeWorkspaceFolder(

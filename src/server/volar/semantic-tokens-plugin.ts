@@ -1,4 +1,5 @@
 import type {
+  LanguageServiceContext,
   LanguageServicePlugin,
   LanguageServicePluginInstance,
   SemanticToken,
@@ -40,7 +41,9 @@ export const semanticTokensPlugin: LanguageServicePlugin = {
       legend: semanticTokensLegend,
     },
   },
-  create(context): LanguageServicePluginInstance {
+  create(context: LanguageServiceContext): LanguageServicePluginInstance {
+    console.log('semanticTokensPlugin create', context);
+
     return {
       provideDocumentSemanticTokens(
         document: TextDocument,
@@ -65,8 +68,10 @@ export const semanticTokensPlugin: LanguageServicePlugin = {
 async function provideTwigSemanticTokens(
   document: TextDocument,
 ): Promise<SemanticToken[]> {
+  console.log('provideTwigSemanticTokens');
   const content = document.getText();
   const tree = await parseTwig(content);
+
   const tokens: SemanticToken[] = [];
   const nodes = new PreOrderCursorIterator(tree.walk());
 
@@ -93,22 +98,6 @@ async function provideTwigSemanticTokens(
       charNumber = 0;
     }
   }
-  // line: number,
-  //     character: number,
-  //     length: number,
-  //     tokenTypes: number,
-  //     tokenModifiers: number
-  // Convert flat array to array of tuples (SemanticToken[])
-  // const semanticTokens: SemanticToken[] = [];
-  // for (let i = 0; i < tokens.length; i += 5) {
-  //   semanticTokens.push([
-  //     tokens[i],
-  //     tokens[i + 1],
-  //     tokens[i + 2],
-  //     tokens[i + 3],
-  //     tokens[i + 4],
-  //   ]);
-  // }
 
   return tokens;
 }

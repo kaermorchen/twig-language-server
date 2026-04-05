@@ -20,6 +20,7 @@ connection.onInitialize((params) => {
     params.initializationOptions?.typescript?.tsdk ?? '',
     params.locale,
   );
+
   return server.initialize(
     params,
     createTypeScriptProject(tsdk.typescript, tsdk.diagnosticMessages, () => ({
