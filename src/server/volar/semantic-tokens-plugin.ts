@@ -19,7 +19,7 @@ const tokenTypes = new Map<string, number>(
 const functionTokenType = tokenTypes.get('function')!;
 const commentTokenType = tokenTypes.get('comment')!;
 
-const resolveTokenType = (node: any) => {
+export const resolveTokenType = (node: any) => {
   if (
     node.nodeType === 'property' &&
     node.currentNode.parent!.nextSibling?.type === 'arguments'
@@ -42,8 +42,6 @@ export const semanticTokensPlugin: LanguageServicePlugin = {
     },
   },
   create(context: LanguageServiceContext): LanguageServicePluginInstance {
-    console.log('semanticTokensPlugin create', context);
-
     return {
       provideDocumentSemanticTokens(
         document: TextDocument,
@@ -51,15 +49,7 @@ export const semanticTokensPlugin: LanguageServicePlugin = {
         legend: typeof semanticTokensLegend,
         token: CancellationToken,
       ) {
-        const decoded = context.decodeEmbeddedDocumentUri(
-          URI.parse(document.uri),
-        );
-        if (!decoded) {
-          // Not an embedded document (root Twig document)
-          return provideTwigSemanticTokens(document);
-        }
-        // Embedded documents (e.g., HTML, CSS inside Twig) пока не поддерживаем
-        return undefined;
+        return provideTwigSemanticTokens(document);
       },
     };
   },
@@ -77,25 +67,16 @@ async function provideTwigSemanticTokens(
 
   for (const node of nodes) {
     const tokenType = resolveTokenType(node);
+
     if (tokenType === undefined) {
       continue;
     }
 
     const start = pointToPosition(node.startPosition);
     const lines = node.nodeText.split('\n');
-    let lineNumber = start.line;
-    let charNumber = start.character;
 
     for (const line of lines) {
-      tokens.push([
-        lineNumber,
-        charNumber,
-        line.length,
-        tokenType,
-        0, // modifiers
-      ]);
-      lineNumber++;
-      charNumber = 0;
+      tokens.push([start.line, start.character, line.length, tokenType, 0]);
     }
   }
 

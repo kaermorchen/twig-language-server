@@ -1,4 +1,3 @@
-// import { createConnection, ProposedFeatures } from 'vscode-languageserver/node';
 import { Server, serverConfig } from './server';
 import {
   createConnection,
@@ -14,13 +13,6 @@ import { create as createTypeScriptServices } from 'volar-service-typescript';
 import { URI } from 'vscode-uri';
 import { semanticTokensPlugin } from './volar/semantic-tokens-plugin';
 import { twigLanguagePlugin } from './volar/twig-language-plugin';
-// import { html1LanguagePlugin, Html1VirtualCode } from './languagePlugin';
-
-// const connection = createConnection(ProposedFeatures.all);
-
-// new Server(connection);
-
-// connection.listen();
 
 const connection = createConnection();
 const server = createServer(connection);
@@ -37,9 +29,7 @@ connection.onInitialize((params) => {
   return server.initialize(
     params,
     createTypeScriptProject(tsdk.typescript, tsdk.diagnosticMessages, () => ({
-      languagePlugins: [
-        // twigLanguagePlugin
-      ],
+      languagePlugins: [twigLanguagePlugin],
     })),
     [
       semanticTokensPlugin,
@@ -47,46 +37,6 @@ connection.onInitialize((params) => {
       // createCssService(),
       // createEmmetService(),
       // ...createTypeScriptServices(tsdk.typescript),
-      // {
-      // 	capabilities: {
-      // 		diagnosticProvider: {
-      // 			interFileDependencies: false,
-      // 			workspaceDiagnostics: false,
-      // 		},
-      // 	},
-      // 	create(context) {
-      // 		return {
-      // 			provideDiagnostics(document) {
-      // 				const decoded = context.decodeEmbeddedDocumentUri(URI.parse(document.uri));
-      // 				if (!decoded) {
-      // 					// Not a embedded document
-      // 					return;
-      // 				}
-      // 				const virtualCode = context.language.scripts.get(decoded[0])?.generated?.embeddedCodes.get(decoded[1]);
-      // 				if (!(virtualCode instanceof Html1VirtualCode)) {
-      // 					return;
-      // 				}
-      // 				const styleNodes = virtualCode.htmlDocument.roots.filter(root => root.tag === 'style');
-      // 				if (styleNodes.length <= 1) {
-      // 					return;
-      // 				}
-      // 				const errors: Diagnostic[] = [];
-      // 				for (let i = 1; i < styleNodes.length; i++) {
-      // 					errors.push({
-      // 						severity: 2,
-      // 						range: {
-      // 							start: document.positionAt(styleNodes[i].start),
-      // 							end: document.positionAt(styleNodes[i].end),
-      // 						},
-      // 						source: 'html1',
-      // 						message: 'Only one style tag is allowed.',
-      // 					});
-      // 				}
-      // 				return errors;
-      // 			},
-      // 		};
-      // 	},
-      // },
     ],
   );
 });

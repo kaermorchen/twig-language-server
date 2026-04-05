@@ -2,6 +2,8 @@
 
 {{ user.name }}
 
+{{ name|striptags|title }}
+
 {% set name = 'Fabien' %}
 {% set numbers = [1, 2] %}
 {% set map = {'city': 'Paris'} %}
