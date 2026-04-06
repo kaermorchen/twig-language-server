@@ -7,7 +7,7 @@
     "vscode": "^1.74.0"
   },
   "activationEvents": [
-    "onLanguage:twig"
+    "onLanguage:html"
   ],
   "main": "./out/client.js",
   "publisher": "stanislav",
@@ -68,7 +68,7 @@
     },
     "languages": [
       {
-        "id": "twig",
+        "id": "html",
         "aliases": [
           "HTML (Twig)",
           "twig"

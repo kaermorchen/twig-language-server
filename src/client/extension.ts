@@ -86,7 +86,7 @@ async function addWorkspaceFolder(
     documentSelector: [
       {
         // scheme: 'file',
-        language: 'twig',
+        language: 'html',
         // pattern: `${folderPath}/**`,
       },
     ],
@@ -110,7 +110,7 @@ async function addWorkspaceFolder(
 
   await client.start();
 
-  activateAutoInsertion('twig', client);
+  activateAutoInsertion('html', client);
 
   // support for https://marketplace.visualstudio.com/items?itemName=johnsoncodehk.volarjs-labs
   const labsInfo = createLabsInfo(serverProtocol);

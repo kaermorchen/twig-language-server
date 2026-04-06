@@ -18,11 +18,11 @@ import * as html from 'vscode-html-languageservice';
 export const twigLanguagePlugin: LanguagePlugin<URI> = {
   getLanguageId(uri) {
     if (uri.path.endsWith('.twig')) {
-      return 'twig';
+      return 'html';
     }
   },
   createVirtualCode(uri, languageId, snapshot) {
-    if (languageId === 'twig') {
+    if (uri.path.endsWith('.twig')) {
       return new TwigVirtualCode(snapshot);
     }
   },
@@ -37,14 +37,6 @@ export const twigLanguagePlugin: LanguagePlugin<URI> = {
     getServiceScript() {
       return undefined;
     },
-    // getExtraServiceScripts(fileName, root) {
-    //   const scripts: TypeScriptExtraServiceScript[] = [];
-    //   for (const code of forEachEmbeddedCode(root)) {
-    //     // Если есть embedded JavaScript/TypeScript коды, можно добавить
-    //     // Пока оставим пустым
-    //   }
-    //   return scripts;
-    // },
   },
 };
 
@@ -55,56 +47,9 @@ export class TwigVirtualCode implements VirtualCode {
   languageId = 'html';
   mappings: CodeMapping[] = [];
   embeddedCodes: VirtualCode[] = [];
-  htmlDocument: html.HTMLDocument;
-  // tree?: Parser.Tree;
-  // private treePromise: Promise<Parser.Tree> | null = null;
 
   constructor(public snapshot: ts.IScriptSnapshot) {
-    this.mappings = [
-      {
-        sourceOffsets: [0],
-        generatedOffsets: [0],
-        lengths: [snapshot.getLength()],
-        data: {
-          completion: true,
-          format: true,
-          navigation: true,
-          semantic: true,
-          structure: true,
-          verification: true,
-        },
-      },
-    ];
-
-    this.htmlDocument = htmlLs.parseHTMLDocument(
-      html.TextDocument.create(
-        '',
-        'html',
-        0,
-        snapshot.getText(0, snapshot.getLength()),
-      ),
-    );
-
-    // this.onSnapshotUpdated();
-
-    // // 1:1 mapping всего документа
-    // this.mappings = [
-    //   {
-    //     sourceOffsets: [0],
-    //     generatedOffsets: [0],
-    //     lengths: [snapshot.getLength()],
-    //     data: {
-    //       completion: false,
-    //       format: false,
-    //       navigation: false,
-    //       semantic: true,
-    //       structure: false,
-    //       verification: false,
-    //     },
-    //   },
-    // ];
-
-    // this.ensureTree();
+    this.onSnapshotUpdated();
   }
 
   private async onSnapshotUpdated() {
@@ -119,11 +64,6 @@ export class TwigVirtualCode implements VirtualCode {
       } else {
         maskedHtml += ' '.repeat(node.text.length);
 
-        // const fullMatch = node.text;
-        // const content = match[1];        // " content "
-        // const start = match.index;       // Начало {{
-        // const contentStart = start + 2;  // Начало контента после {{
-
         this.embeddedCodes.push({
           id: 'twig_' + node.startIndex,
           languageId: 'typescript',
@@ -134,7 +74,7 @@ export class TwigVirtualCode implements VirtualCode {
           },
           mappings: [
             {
-              sourceOffsets: [node.startIndex], // Указываем, где в ориг. файле начало
+              sourceOffsets: [node.startIndex],
               generatedOffsets: [0],
               lengths: [node.text.length],
               data: {
@@ -149,29 +89,9 @@ export class TwigVirtualCode implements VirtualCode {
           ],
           embeddedCodes: [],
         });
-
-        // this.embeddedCodes.push(
-        //   new TwigBlockVirtualCode(
-        //     `${node.type}_${node.startIndex}`,
-        //     this.snapshot,
-        //     node.startIndex,
-        //     node.endIndex - node.startIndex,
-        //     node.type,
-        //   ),
-        // );
-        // result.push(
-        //   new TwigBlockVirtualCode(
-        //     `${node.type}_${node.startIndex}`,
-        //     this.snapshot,
-        //     node.startIndex,
-        //     node.endIndex - node.startIndex,
-        //     node.type,
-        //   ),
-        // );
       }
     }
 
-    // Сохраняем маскированный код для HTML-сервиса
     this.snapshot = {
       getText: (start, end) => maskedHtml.substring(start, end),
       getLength: () => maskedHtml.length,
@@ -194,50 +114,6 @@ export class TwigVirtualCode implements VirtualCode {
       },
     ];
   }
-
-  // private async ensureTree(): Promise<Parser.Tree> {
-  //   if (this.tree) {
-  //     return this.tree;
-  //   }
-  //   if (!this.treePromise) {
-  //     this.treePromise = parseTwig(
-  //       this.snapshot.getText(0, this.snapshot.getLength()),
-  //     );
-  //   }
-  //   this.tree = await this.treePromise;
-  //   await this.updateEmbeddedCodes();
-  //   return this.tree;
-  // }
-
-  // private async updateEmbeddedCodes(): Promise<void> {
-  //   if (!this.tree) {
-  //     return;
-  //   }
-  //   const embedded: VirtualCode[] = [];
-  //   const root = this.tree.rootNode;
-  //   this.collectEmbeddedNodes(root, embedded);
-  //   this.embeddedCodes = embedded;
-  // }
-
-  // private collectEmbeddedNodes(node: SyntaxNode, result: VirtualCode[]): void {
-  //   if (!this.tree) {
-  //     return;
-  //   }
-
-  //   for (const node of this.tree.rootNode.children) {
-  //     if (node.type !== 'content') {
-  //       result.push(
-  //         new TwigBlockVirtualCode(
-  //           `${node.type}_${node.startIndex}`,
-  //           this.snapshot,
-  //           node.startIndex,
-  //           node.endIndex - node.startIndex,
-  //           node.type,
-  //         ),
-  //       );
-  //     }
-  //   }
-  // }
 }
 
 class TwigBlockVirtualCode implements VirtualCode {

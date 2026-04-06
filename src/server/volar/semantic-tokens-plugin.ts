@@ -74,8 +74,10 @@ async function provideTwigSemanticTokens(
     const start = pointToPosition(node.startPosition);
     const lines = node.nodeText.split('\n');
 
-    for (const line of lines) {
-      tokens.push([start.line, start.character, line.length, tokenType, 0]);
+    tokens.push([start.line, start.character, lines[0].length, tokenType, 0]);
+
+    for (let i = 1; i < lines.length; i++) {
+      tokens.push([start.line + i, 0, lines[i].length, tokenType, 0]);
     }
   }
 
