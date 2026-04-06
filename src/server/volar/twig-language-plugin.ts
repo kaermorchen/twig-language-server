@@ -59,14 +59,15 @@ export class TwigVirtualCode implements VirtualCode {
     let maskedHtml = '';
 
     for (const node of tree.rootNode.children) {
+      // TODO: проверять source_element или код между embedded_start и embedded_end
       if (node.type === 'content') {
         maskedHtml += node.text;
       } else {
-        maskedHtml += ' '.repeat(node.text.length);
+        maskedHtml += node.text.replace(/\S/g, ' ');
 
         this.embeddedCodes.push({
           id: 'twig_' + node.startIndex,
-          languageId: 'typescript',
+          languageId: 'twig',
           snapshot: {
             getText: (s, e) => node.text.substring(s, e),
             getLength: () => node.text.length,
