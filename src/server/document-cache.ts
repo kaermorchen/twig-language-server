@@ -5,14 +5,17 @@ import { readFile } from 'fs/promises';
 import { DocumentUri, WorkspaceFolder } from 'vscode-languageserver';
 import { fsPathToDocumentUri } from './utils/fs-path-to-document-uri';
 import Parser from 'web-tree-sitter';
+import { documentUriToFsPath } from './utils/document-uri-to-fs-path';
 
 export class Document {
   documentUri: string;
   text: string | undefined;
   cstCache: Parser.Tree | undefined;
+  workspaceFolder: WorkspaceFolder;
 
-  constructor(documentUri: DocumentUri) {
+  constructor(documentUri: DocumentUri, workspaceFolder: WorkspaceFolder) {
     this.documentUri = documentUri;
+    this.workspaceFolder = workspaceFolder;
   }
 
   async setText(text: string) {
@@ -21,11 +24,11 @@ export class Document {
   }
 
   async getText(): Promise<string> {
-    if (this.text) {
+    if (this.text !== undefined) {
       return this.text;
     }
 
-    this.text = await readFile(this.documentUri, 'utf-8');
+    this.text = await readFile(documentUriToFsPath(this.documentUri), 'utf-8');
 
     return this.text;
   }
@@ -56,7 +59,7 @@ export class DocumentCache {
       return this.documents.get(documentUri);
     }
 
-    const doc = new Document(documentUri);
+    const doc = new Document(documentUri, this.workspaceFolder);
 
     this.documents.set(documentUri, doc);
 
