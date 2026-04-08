@@ -68,9 +68,7 @@ async function addWorkspaceFolder(
     outputChannel,
     documentSelector: [
       {
-        scheme: 'file',
-        language: 'twig',
-        pattern: `${folderPath}/**`,
+        language: 'html',
       },
     ],
     synchronize: { fileEvents },

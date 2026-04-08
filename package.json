@@ -7,7 +7,7 @@
     "vscode": "^1.74.0"
   },
   "activationEvents": [
-    "onStartupFinished"
+    "onLanguage:html"
   ],
   "main": "./out/extension.js",
   "publisher": "stanislav",
@@ -59,30 +59,18 @@
     },
     "languages": [
       {
+        "id": "html",
+        "extensions": [
+          ".twig",
+          ".html.twig"
+        ]
+      },
+      {
         "id": "twig",
         "aliases": [
           "HTML (Twig)",
           "twig"
-        ],
-        "extensions": [
-          ".twig",
-          ".html.twig"
-        ],
-        "configuration": "./languages/twig.configuration.json"
-      }
-    ],
-    "grammars": [
-      {
-        "language": "twig",
-        "scopeName": "text.html.twig",
-        "path": "./syntaxes/html.tmLanguage.json",
-        "embeddedLanguages": {
-          "text.html": "html",
-          "source.twig": "twig",
-          "source.js": "javascript",
-          "source.json": "json",
-          "source.css": "css"
-        }
+        ]
       }
     ],
     "semanticTokenTypes": [

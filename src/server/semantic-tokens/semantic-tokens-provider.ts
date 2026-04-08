@@ -64,13 +64,17 @@ export class SemanticTokensProvider {
 
       const start = pointToPosition(node.startPosition);
       const lines = node.nodeText.split('\n');
-      let lineNumber = start.line;
-      let charNumber = start.character;
 
-      for (const line of lines) {
-        tokensBuilder.push(lineNumber++, charNumber, line.length, tokenType, 0);
+      tokensBuilder.push(
+        start.line,
+        start.character,
+        lines[0].length,
+        tokenType,
+        0,
+      );
 
-        charNumber = 0;
+      for (let i = 1; i < lines.length; i++) {
+        tokensBuilder.push(start.line + i, 0, lines[i].length, tokenType, 0);
       }
     }
 

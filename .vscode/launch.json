@@ -8,6 +8,7 @@
       "preLaunchTask": "${defaultBuildTask}",
       "args": [
         "--extensionDevelopmentPath=${workspaceFolder}",
+        "--folder-uri=${workspaceRoot}/sample",
         "--disable-extensions",
       ],
       "outFiles": [
